@@ -1,0 +1,98 @@
+// ==UserScript==
+// @name         Torn City Battle Stats Viewer
+// @namespace    http://tampermonkey.net/
+// @version      1.1
+// @description  Display battle stats from personal API in Torn City
+// @author       Mimo
+// @match        https://www.torn.com/*
+// @grant        GM_xmlhttpRequest
+// @connect      yourapi.com
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    const localStorageKey = 'tornCityApiKey';
+
+    // Function to create and insert the button into the Torn City interface
+    function createButton() {
+        const button = document.createElement('button');
+        button.innerHTML = 'Show Battle Stats';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '10px';
+        button.style.zIndex = '1000';
+        button.style.padding = '10px';
+        button.style.backgroundColor = '#4CAF50';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.cursor = 'pointer';
+
+        button.addEventListener('click', fetchBattleStats);
+        document.body.appendChild(button);
+    }
+
+    // Function to fetch battle stats from your API
+    function fetchBattleStats() {
+        let apiKey = localStorage.getItem(localStorageKey);
+        if (!apiKey) {
+            apiKey = prompt("Please enter your API key:");
+            if (apiKey) {
+                localStorage.setItem(localStorageKey, apiKey);
+            } else {
+                alert('API key is required to fetch battle stats.');
+                return;
+            }
+        }
+
+        const apiUrl = `https://yourapi.com/battlestats?key=${apiKey}`;
+
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: apiUrl,
+            onload: function(response) {
+                if (response.status === 200) {
+                    const data = JSON.parse(response.responseText);
+                    displayStats(data);
+                } else {
+                    alert('Failed to fetch battle stats');
+                }
+            },
+            onerror: function() {
+                alert('Error fetching battle stats');
+            }
+        });
+    }
+
+    // Function to display the fetched battle stats
+    function displayStats(stats) {
+        const existingDiv = document.getElementById('battle-stats-div');
+        if (existingDiv) {
+            existingDiv.remove();
+        }
+
+        const statsDiv = document.createElement('div');
+        statsDiv.id = 'battle-stats-div';
+        statsDiv.style.position = 'fixed';
+        statsDiv.style.top = '50px';
+        statsDiv.style.right = '10px';
+        statsDiv.style.zIndex = '1000';
+        statsDiv.style.padding = '10px';
+        statsDiv.style.backgroundColor = 'white';
+        statsDiv.style.border = '1px solid #ccc';
+        statsDiv.style.boxShadow = '0px 0px 10px rgba(0,0,0,0.5)';
+
+        statsDiv.innerHTML = `
+            <h3>Battle Stats</h3>
+            <p>Strength: ${stats.strength}</p>
+            <p>Defense: ${stats.defense}</p>
+            <p>Speed: ${stats.speed}</p>
+            <p>Dexterity: ${stats.dexterity}</p>
+        `;
+
+        document.body.appendChild(statsDiv);
+    }
+
+    // Run the script
+    createButton();
+})();
